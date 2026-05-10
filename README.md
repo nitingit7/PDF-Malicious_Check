@@ -149,7 +149,7 @@ strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
 
 ---
 
-## TO Pacify the PDF file
+## To Pacify the PDF file
 
 ### Step 1: Ghostscript Sanitization
 - **Run this command:**
