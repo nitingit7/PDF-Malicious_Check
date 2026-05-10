@@ -190,7 +190,7 @@ strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
 - ```bash
   sudo apt-get update && sudo apt-get install img2pdf -y
   ```
-- Then run the command to convert the images into pdf (it will take time according to the sie of thie file)
+- Then run the command to convert the images into pdf (it will take time according to the size of thie file and it will sort the pages according to the numbering form the image)
 - ```bash
   img2pdf $(ls -v ssc_2025_pages/*.png) -o "SSC_Kiran_2025_SAFE.pdf"
   ```
