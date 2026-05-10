@@ -171,6 +171,32 @@ strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
   ```
 - The result should now show `0` for `/JS`, `/JavaScript`, and `/AA`. If it still shows numbers greater than zero, the sanitization failed, and you should delete the file immediately.
 
+### To print each peges into png or jpg so extra secured pdf file
+- First create the folder for storing the images:
+- ```bash
+  mkdir ssc_2025_pages
+  ```
+- ### Use Ghostscript to "Print" to PNG
+- **Run this command. It tells Ghostscript to turn every page into a high-quality (300 DPI) image:**
+- ```bash
+  gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r300 -sOutputFile=ssc_2025_pages/page-%d.png "SSC_Kiran_English_FIXED.pdf"
+  ```
+- `-r300`: This sets the resolution to 300 DPI. This is the "sweet spot"—it makes the text very clear for reading, but doesn't make the file size impossible to handle.
+- `page-%d.png`: The `%d` tells the computer to number the pages automatically `(page-1.png, page-2.png, etc.)`.
+- ### To convert back to pdf:
+- **Method1**: Use the pdf editor software to compile all the images into pdf
+- **Methode 2**: Use the img2pdf:
+- Downlaod the img2pdf first
+- ```bash
+  sudo apt-get update && sudo apt-get install img2pdf -y
+  ```
+- Then run the command to convert the images into pdf (it will take time according to the sie of thie file)
+- ```bash
+  img2pdf ssc_2025_pages/*.png -o "SSC_Kiran_2025_SAFE.pdf"
+  ```
+- `Security`: This tool is strictly for images. It doesn't even have the "brain" to understand JavaScript or shellcode, so it acts as a final filter that ensures your output is 100% clean.
+  
+
 ## 📉 Reclaiming System Resources
 
 Because Docker and WSL 2 "reserve" RAM, you must shut them down manually after your analysis is complete.
