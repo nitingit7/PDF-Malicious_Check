@@ -66,9 +66,28 @@ pdfid.py "suspicious_file.pdf"
 **🚩 Red Flags:**
 
 * `/JS` and `/JavaScript`: Indicates embedded scripts.
+* `/ObjStm` counts the number of object streams. An object stream is a stream object that can contain other objects, and can therefor be used to obfuscate objects (by using different filters).
 * `/OpenAction`: Code that runs automatically on opening.
 * `/AA` (Additional Actions): Code triggered by scrolling or clicking.
 * `/Encrypt`: Often used to hide malicious payloads from antivirus scanners.
+  <details>
+  <summary><b>To go inside the /ObjStm</b></summary>
+
+  ### Run this in your Docker container:
+  ```shell
+  qpdf --qdf --object-streams=disable SSC_Kiran_English.pdf expanded_check.pdf
+  ```
+  ### Then scan the NEW file:
+  ```shell
+  pdfid.py expanded_check.pdf
+  ```
+  - If /JS was 0 before, but is now 1 or higher, it was hidden inside an /ObjStm.
+  - ### Key Takeaway
+  - For larger file it is normal (still peek inside to check the /JS) to compress the pdf
+  - But for smaller file it is highly suspicious
+
+</details>
+
 
 ### 2. Deep Object Inspection (`pdf-parser`)
 
