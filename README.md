@@ -149,6 +149,28 @@ strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
 
 ---
 
+## TO Pacify the PDF file
+
+### Step 1: Ghostscript Sanitization
+- **Run this command:**
+- ```bash
+  gs -o "SSC_Kiran_English_FIXED.pdf" -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress "SSC_Kiran_English.pdf"
+  ```
+- This command is excellent for reducing file size and flattening the document structure.
+
+### Step 2: The "Nuclear" Option (Image-Based)
+- If you are still suspicious, the absolute safest method is to turn every page into an image and then rebuild the PDF. This destroys all active content
+- **Run this command:**
+- ```basg
+  gs -sDEVICE=pdfwrite -dFILTERIMAGE -o "SSC_Kiran_English_IMAGE.pdf" "SSC_Kiran_English_FIXED.pdf"
+  ```
+### Crucial Verification Step
+- Run `pdfid` on the new file:
+- ```bash
+  pdfid.py "SSC_Kiran_English_IMAGE.pdf"
+  ```
+- The result should now show `0` for `/JS`, `/JavaScript`, and `/AA`. If it still shows numbers greater than zero, the sanitization failed, and you should delete the file immediately.
+
 ## 📉 Reclaiming System Resources
 
 Because Docker and WSL 2 "reserve" RAM, you must shut them down manually after your analysis is complete.
