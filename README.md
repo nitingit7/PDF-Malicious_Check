@@ -181,9 +181,12 @@ strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
 - **Method1**: Use the pdf editor software to compile all the images into pdf
 - But fist remove the metadate from the PNG images run this code:
 - ```bash
-  mogrify -strip ssc_2025_pages/*.png
+  for f in ssc_2025_pages/*.png; do mogrify -strip "$f"; done
   ```
-- Now then you can proceede with convert images to pdf from pdf Editor
+- This handles one image at a time.
+- It uses almost zero extra RAM.
+- It is 100% safe from crashing.
+- ### Now then you can proceede with convert images to pdf from pdf Editor
 - **Move to a "Clean" Folder:**
 - Copy the `.png` **files** from your Docker folder to a new, empty folder on your Windows desktop.
 
