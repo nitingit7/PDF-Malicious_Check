@@ -186,10 +186,9 @@ strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
 - This handles one image at a time.
 - It uses almost zero extra RAM.
 - It is 100% safe from crashing.
-- ### Now then you can proceede with convert images to pdf from pdf Editor
 - **Move to a "Clean" Folder:**
 - Copy the `.png` **files** from your Docker folder to a new, empty folder on your Windows desktop.
-
+- ### Now then you can proceede with convert images to pdf from pdf Editor
 - **Methode 2**: Use the img2pdf:
 - Downlaod the img2pdf first
 - ```bash
