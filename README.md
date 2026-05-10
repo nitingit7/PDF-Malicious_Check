@@ -89,6 +89,36 @@ pdfid.py "suspicious_file.pdf"
 </details>
 
 
+  <details>
+  <summary><b>To peek into /JS and /javascript</b></summary>
+
+  ### Decompress the PDF
+  - ```shell
+    qpdf --qdf --object-streams=disable your_file.pdf unpacked.pdf
+    ```
+  ### Locate the JavaScript Objects
+  - ```shell
+    pdf-parser.py --search javascript unpacked.pdf
+    ```
+  - Look for a line that says obj 123 0 (where 123 is the Object ID).
+  ### Extract the Code
+  - ```shell
+    pdf-parser.py --object 123 --filter --raw unpacked.pdf > extracted_code.js
+    ```
+  - `--object`: Specifies the ID you found.
+  - `--filter`: Decodes the "FlateDecode" compression (zlib).
+  - `--raw`: Prevents the tool from adding extra formatting.
+  ### What you might see inside
+  - `this.exportDataObject`: Used to extract and launch hidden EXE files.
+  - `util.printf("%", ...)`: A common way to trigger "Buffer Overflows" in old PDF readers.
+  - `app.launchURL`: Tries to open a malicious website in your browser.
+  - `getAnnots`: Used in "Side-loading" attacks to hide data in comments.
+  ### The "Obfuscation" Trap
+  - If the code looks like a giant wall of random letters `(var a = "x72\x65\x76...";)`, the attacker is obfuscating the script.
+  - **Do not try to run this code manually** to see what it does. Malicious JS often detects it's being analyzed and changes its behavior.
+</details>
+
+
 ### 2. Deep Object Inspection (`pdf-parser`)
 
 If scripts are found, locate the specific objects containing them.
