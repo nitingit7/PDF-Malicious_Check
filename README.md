@@ -184,6 +184,8 @@ strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
   mogrify -strip ssc_2025_pages/*.png
   ```
 - Now then you can proceede with convert images to pdf from pdf Editor
+- **Move to a "Clean" Folder:**
+- Copy the `.png` **files** from your Docker folder to a new, empty folder on your Windows desktop.
 
 - **Methode 2**: Use the img2pdf:
 - Downlaod the img2pdf first
