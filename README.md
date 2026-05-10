@@ -164,12 +164,6 @@ strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
 - ```basg
   gs -sDEVICE=pdfwrite -dFILTERIMAGE -o "SSC_Kiran_English_IMAGE.pdf" "SSC_Kiran_English_FIXED.pdf"
   ```
-### Crucial Verification Step
-- Run `pdfid` on the new file:
-- ```bash
-  pdfid.py "SSC_Kiran_English_IMAGE.pdf"
-  ```
-- The result should now show `0` for `/JS`, `/JavaScript`, and `/AA`. If it still shows numbers greater than zero, the sanitization failed, and you should delete the file immediately.
 
 ### To print each peges into png or jpg so extra secured pdf file
 - First create the folder for storing the images:
@@ -195,7 +189,13 @@ strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
   img2pdf ssc_2025_pages/*.png -o "SSC_Kiran_2025_SAFE.pdf"
   ```
 - `Security`: This tool is strictly for images. It doesn't even have the "brain" to understand JavaScript or shellcode, so it acts as a final filter that ensures your output is 100% clean.
-  
+- 
+### Crucial Verification Step
+- Run `pdfid` on the new file:
+- ```bash
+  pdfid.py "Processed.pdf"
+  ```
+- The result should now show `0` for `/JS`, `/JavaScript`, and `/AA`. If it still shows numbers greater than zero, the sanitization failed, and you should delete the file immediately.
 
 ## 📉 Reclaiming System Resources
 
