@@ -186,8 +186,9 @@ strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
   ```
 - Then run the command to convert the images into pdf (it will take time according to the sie of thie file)
 - ```bash
-  img2pdf ssc_2025_pages/*.png -o "SSC_Kiran_2025_SAFE.pdf"
+  img2pdf $(ls -v ssc_2025_pages/*.png) -o "SSC_Kiran_2025_SAFE.pdf"
   ```
+- `ls -v` (version sort) inside the command to make sure Page 2 comes after Page 1, not after Page 100
 - `Security`: This tool is strictly for images. It doesn't even have the "brain" to understand JavaScript or shellcode, so it acts as a final filter that ensures your output is 100% clean.
 - 
 ### Crucial Verification Step
