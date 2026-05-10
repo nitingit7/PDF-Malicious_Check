@@ -179,6 +179,12 @@ strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
 - `page-%d.png`: The `%d` tells the computer to number the pages automatically `(page-1.png, page-2.png, etc.)`.
 - ### To convert back to pdf:
 - **Method1**: Use the pdf editor software to compile all the images into pdf
+- But fist remove the metadate from the PNG images run this code:
+- ```bash
+  mogrify -strip ssc_2025_pages/*.png
+  ```
+- Now then you can proceede with convert images to pdf from pdf Editor
+
 - **Methode 2**: Use the img2pdf:
 - Downlaod the img2pdf first
 - ```bash
