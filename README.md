@@ -75,7 +75,7 @@ pdfid.py "suspicious_file.pdf"
 
   ### Run this in your Docker container:
   ```shell
-  qpdf --qdf --object-streams=disable SSC_Kiran_English.pdf expanded_check.pdf
+  qpdf --qdf --object-streams=disable suspicious_file.pdf expanded_check.pdf
   ```
   ### Then scan the NEW file:
   ```shell
