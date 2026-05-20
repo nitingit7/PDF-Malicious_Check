@@ -134,7 +134,38 @@ pdf-parser.py -o 77 -f "suspicious_file.pdf"
 
 *Note: If you get a `zlib.error`, the file may be using **Anti-Analysis** tactics (malformed headers) to crash your tools.*
 
-### 3. Brute-Force String Extraction (`strings` + `grep`)
+### 3. if it is not showing /JS or /Javascript then run this
+```bash
+peepdf -i "file_name.pdf"
+```
+
+*Once the interactive prompt loads (PP>), type this exact command to rip out the JavaScript and dump it straight into a text file:*
+```bash
+extract js > script.js
+```
+
+*Then type exit to close the tool. You can now read the clean code by running:*
+```bash
+cat script.js
+```
+
+If it is not returning anything then the file is empty and it didn't copy anything from anything in the json file
+
+## for fo furhter checking then run this
+```bash
+pdf-parser.py -a "file_name.pdf"
+```
+
+*At the very top or bottom of the -a output, it will show a clean count of structural properties:*
+`Catalog: 1
+Info: 1
+Pages: 79
+Actions: 0     <-- Look at this!`
+
+If Actions or OpenAction displays a count of 0, and peepdf generated a completely empty file, it confirms a definitive conclusion: There is no actual JavaScript code hidden inside this PDF file
+
+
+### 4. Brute-Force String Extraction (`strings` + `grep`)
 
 If the PDF structure is corrupted or too large for parsers, extract raw text patterns.
 
