@@ -1,270 +1,526 @@
-# PDF-Malicious_Check
+# PDF Malware Analysis Lab
 
-Here is a comprehensive `README.md` file that summarizes our entire workflow. You can copy this directly into a file on your GitHub repository.
+<div align="center">
+
+[![Docker](https://img.shields.io/badge/Docker-REMnux-blue?logo=docker&logoColor=white)](https://hub.docker.com/r/remnux/remnux-distro)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Language](https://img.shields.io/badge/Language-Python%20%7C%20Bash-orange.svg)](#)
+![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-success.svg)
+
+**A comprehensive guide to identifying malicious objects, JavaScript, and obfuscated triggers in suspicious PDF files using an isolated Docker environment.**
+
+[⚡ Quick Start](#-quick-start) • [🔍 Analysis Workflow](#-analysis-workflow) • [📚 Tools Reference](#-reference-tools) • [⚠️ Safety](#️-safety-warning)
+
+</div>
 
 ---
 
-# PDF Malware Analysis Lab
+## 📋 Table of Contents
 
-A step-by-step guide to identifying malicious objects, JavaScript, and obfuscated triggers in suspicious PDF files using an isolated Docker environment.
+- [Overview](#overview)
+- [Prerequisites](#-prerequisites)
+- [System Configuration](#system-configuration)
+- [Environment Setup](#-environment-setup)
+- [Quick Start](#-quick-start)
+- [Analysis Workflow](#-analysis-workflow)
+- [PDF Sanitization](#-to-pacify-the-pdf-file)
+- [Cleanup](#-reclaiming-system-resources)
+- [Reference Tools](#-reference-tools)
+- [Safety Warning](#️-safety-warning)
+
+---
+
+## Overview
+
+This project provides **step-by-step instructions** to safely analyze suspicious PDF files for malicious content. Using Docker and REMnux, you can:
+
+✅ Scan PDFs for dangerous keywords  
+✅ Extract hidden JavaScript  
+✅ Detect obfuscated malware triggers  
+✅ Sanitize malicious PDFs  
+✅ Work in a **completely isolated environment**  
+
+---
 
 ## 🛠️ Prerequisites
 
-* **Docker Desktop** installed on Windows/Mac.
-* **WSL 2 Backend** enabled (for Windows users).
-* **RAM Management:** For large PDFs (300MB+), you must allocate sufficient memory to WSL 2.
+Before starting, ensure you have:
 
-### System Configuration
+| Requirement | Details |
+|-------------|---------|
+| **Docker Desktop** | [Download here](https://www.docker.com/products/docker-desktop) |
+| **WSL 2 Backend** | Required for Windows users |
+| **RAM Allocation** | Min 4GB for small PDFs, 8GB+ for large files (300MB+) |
+| **Disk Space** | ~3GB for REMnux image |
 
-Create a file at `C:\Users\<YourUsername>\.wslconfig` to prevent system crashes during analysis:
+---
+
+## System Configuration
+
+### Windows Users: WSL 2 Memory Setup
+
+Create a configuration file to prevent system crashes during analysis:
+
+1. **Open PowerShell as Administrator**
+2. **Create the file** `C:\Users\<YourUsername>\.wslconfig`:
 
 ```ini
 [wsl2]
 memory=4GB
 swap=2GB
+
 [experimental]
 autoMemoryReclaim=gradual
-
 ```
 
-*After creating this file, run `wsl --shutdown` in PowerShell.*
+3. **Apply changes:**
+```powershell
+wsl --shutdown
+```
+
+> **Why?** Large PDFs can consume significant memory. This config prevents your system from freezing.
 
 ---
 
 ## 🚀 Environment Setup
 
-Use the **REMnux** (Reverse-Engineering Malware Linux) Docker image. It contains all the pre-installed tools needed.
+This lab uses **REMnux** (Reverse-Engineering Malware Linux), a specialized Docker image with all analysis tools pre-installed.
 
-1. **Navigate** to your folder containing the suspicious PDFs.
-2. **Run the container:**
+### Step-by-Step Setup
 
-```cmd
-docker run --rm -it -m 4g -u remnux -v "%cd%":/home/remnux/files remnux/remnux-distro:noble bash
-
+#### 1. Navigate to Your Analysis Folder
+```bash
+cd C:\Users\YourUsername\Documents\pdf_analysis
 ```
 
-3. **Enter the workspace:**
+#### 2. Start the Docker Container
+```bash
+docker run --rm -it -m 4g -u remnux -v "%cd%":/home/remnux/files remnux/remnux-distro:noble bash
+```
 
+**Command Breakdown:**
+- `--rm` → Auto-clean container after exit
+- `-it` → Interactive terminal
+- `-m 4g` → Allocate 4GB RAM
+- `-u remnux` → Run as non-root user
+- `-v "%cd%":/home/remnux/files` → Mount current folder
+
+#### 3. Enter the Workspace
 ```bash
 cd /home/remnux/files
+ls -la
+```
 
+You should now see all your suspicious PDFs in the container.
+
+---
+
+## ⚡ Quick Start
+
+**For the impatient:** Run these commands in order:
+
+```bash
+# 1. Initial scan for suspicious keywords
+pdfid.py "suspicious_file.pdf"
+
+# 2. If suspicious, decompress the PDF
+qpdf --qdf --object-streams=disable "suspicious_file.pdf" expanded.pdf
+
+# 3. Scan the expanded version
+pdfid.py expanded.pdf
+
+# 4. Extract JavaScript (if found)
+pdf-parser.py --search javascript expanded.pdf
 ```
 
 ---
 
 ## 🔍 Analysis Workflow
 
-### 1. High-Level Keyword Scanning (`pdfid`)
+### Step 1️⃣: High-Level Keyword Scanning with `pdfid`
 
-This tool scans the file for "dangerous" PDF keywords without executing them.
+This tool scans PDF structure for **dangerous keywords without executing them**.
 
 ```bash
 pdfid.py "suspicious_file.pdf"
-
 ```
 
-**🚩 Red Flags:**
+#### 🚩 Red Flags to Watch For
 
-* `/JS` and `/JavaScript`: Indicates embedded scripts.
-* `/ObjStm` counts the number of object streams. An object stream is a stream object that can contain other objects, and can therefor be used to obfuscate objects (by using different filters).
-* `/OpenAction`: Code that runs automatically on opening.
-* `/AA` (Additional Actions): Code triggered by scrolling or clicking.
-* `/Encrypt`: Often used to hide malicious payloads from antivirus scanners.
-  <details>
-  <summary><b>To go inside the /ObjStm</b></summary>
+| Keyword | Risk Level | What It Means |
+|---------|-----------|--------------|
+| `/JS` or `/JavaScript` | 🔴 **HIGH** | Embedded scripts that can execute |
+| `/OpenAction` | 🔴 **HIGH** | Code runs automatically when PDF opens |
+| `/AA` (Additional Actions) | 🔴 **HIGH** | Code triggered by scrolling, clicking, or page transition |
+| `/ObjStm` | 🟡 **MEDIUM** | Object stream (can hide malicious objects) |
+| `/Encrypt` | 🟡 **MEDIUM** | Encryption often used to hide payloads from antivirus |
+| `/Launch` | 🟡 **MEDIUM** | Can execute external programs |
+| `/EmbeddedFile` | 🟡 **MEDIUM** | Hidden files embedded in PDF |
 
-  ### Run this in your Docker container:
-  ```shell
-  qpdf --qdf --object-streams=disable suspicious_file.pdf expanded_check.pdf
-  ```
-  ### Then scan the NEW file:
-  ```shell
-  pdfid.py expanded_check.pdf
-  ```
-  - If /JS was 0 before, but is now 1 or higher, it was hidden inside an /ObjStm.
-  - ### Key Takeaway
-  - For larger file it is normal (still peek inside to check the /JS) to compress the pdf
-  - But for smaller file it is highly suspicious
+**Example Output:**
+```
+ID: 1
+Version: 1.4
+Extension: pdf
+Producer: 
+Creator: 
+Encrypted: False
+Number of objects: 87
+/JS: 1          ← SUSPICIOUS!
+/JavaScript: 0
+/OpenAction: 0
+/AA: 0
+/ObjStm: 5      ← Also suspicious
+/Encrypt: 0
+```
+
+---
+
+### Step 2️⃣: Decompress Object Streams
+
+If `/ObjStm` count is high or `/JS` is hidden, decompress to reveal hidden objects:
+
+<details>
+<summary><b>🔓 Expanding Object Streams</b></summary>
+
+#### Why decompress?
+Object streams compress multiple PDF objects into one. Malware authors use this to **hide JavaScript from initial scans**.
+
+#### Run this command:
+```bash
+qpdf --qdf --object-streams=disable suspicious_file.pdf expanded.pdf
+```
+
+#### Then scan the new file:
+```bash
+pdfid.py expanded.pdf
+```
+
+#### ✅ What to look for:
+- If `/JS` was **0 before** but is now **1 or higher** → JavaScript was hidden!
+- Compare the object counts between original and expanded versions
+
+#### 📊 Interpretation:
+- **Large files (100MB+):** Compression is normal. Still peek inside `/JS` objects.
+- **Small files (<10MB):** High `/ObjStm` counts are highly suspicious.
 
 </details>
 
+---
 
-  <details>
-  <summary><b>To peek into /JS and /javascript</b></summary>
+### Step 3️⃣: Extract and Analyze JavaScript
 
-  ### Decompress the PDF
-  - ```shell
-    qpdf --qdf --object-streams=disable your_file.pdf unpacked.pdf
-    ```
-  ### Locate the JavaScript Objects
-  - ```shell
-    pdf-parser.py --search javascript unpacked.pdf
-    ```
-  - Look for a line that says obj 123 0 (where 123 is the Object ID).
-  ### Extract the Code
-  - ```shell
-    pdf-parser.py --object 123 --filter --raw unpacked.pdf > extracted_code.js
-    ```
-  - `--object`: Specifies the ID you found.
-  - `--filter`: Decodes the "FlateDecode" compression (zlib).
-  - `--raw`: Prevents the tool from adding extra formatting.
-  ### What you might see inside
-  - `this.exportDataObject`: Used to extract and launch hidden EXE files.
-  - `util.printf("%", ...)`: A common way to trigger "Buffer Overflows" in old PDF readers.
-  - `app.launchURL`: Tries to open a malicious website in your browser.
-  - `getAnnots`: Used in "Side-loading" attacks to hide data in comments.
-  ### The "Obfuscation" Trap
-  - If the code looks like a giant wall of random letters `(var a = "x72\x65\x76...";)`, the attacker is obfuscating the script.
-  - **Do not try to run this code manually** to see what it does. Malicious JS often detects it's being analyzed and changes its behavior.
+<details>
+<summary><b>📜 Extracting Hidden JavaScript</b></summary>
+
+#### Locate JavaScript Objects:
+```bash
+pdf-parser.py --search javascript expanded.pdf
+```
+
+You'll see output like:
+```
+Obj 123 0
+...
+JavaScript content here
+...
+```
+
+#### Extract the Complete Code:
+```bash
+pdf-parser.py --object 123 --filter --raw expanded.pdf > extracted_code.js
+```
+
+**Command Flags:**
+- `--object 123` → Replace with the object ID you found
+- `--filter` → Decode "FlateDecode" compression (zlib)
+- `--raw` → Remove extra formatting
+
+#### 🚨 Common Malicious Patterns:
+
+| Pattern | Purpose | Risk |
+|---------|---------|------|
+| `this.exportDataObject` | Extract and launch hidden EXE files | 🔴 **CRITICAL** |
+| `util.printf("%", ...)` | Trigger buffer overflow in PDF readers | 🔴 **CRITICAL** |
+| `app.launchURL` | Open malicious website in browser | 🔴 **HIGH** |
+| `getAnnots` | "Side-loading" attacks, hide data in comments | 🟡 **MEDIUM** |
+| `collab.collectEmailData` | Steal user data | 🔴 **CRITICAL** |
+| `unescape` | Obfuscation technique | 🟡 **MEDIUM** |
+
+#### ⚠️ Obfuscation Warning:
+If code looks like this:
+```javascript
+var a = "x72\x65\x76\x65\x72\x73\x65";
+```
+
+**Do NOT run it manually.** Obfuscated malicious JS detects analysis and changes behavior. Use a disassembler or stay in the isolated environment.
+
 </details>
 
+---
 
-### 2. Deep Object Inspection (`pdf-parser`)
+### Step 4️⃣: Deep Object Inspection with `pdf-parser`
 
-If scripts are found, locate the specific objects containing them.
+If standard scanning misses something:
 
 ```bash
-# Search for JavaScript objects
+# Search for all JS objects
 pdf-parser.py --search JS "suspicious_file.pdf"
 
-# Decompress and read a specific object (e.g., obj 77)
+# Extract a specific object (replace 77 with actual ID)
 pdf-parser.py -o 77 -f "suspicious_file.pdf"
 
+# Get full analysis
+pdf-parser.py -a "suspicious_file.pdf"
 ```
 
-*Note: If you get a `zlib.error`, the file may be using **Anti-Analysis** tactics (malformed headers) to crash your tools.*
+#### Handling Common Errors:
 
-### 3. if it is not showing /JS or /Javascript then run this
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `zlib.error` | Corrupted headers (anti-analysis tactic) | Use `peepdf` instead |
+| No output | File may be PDF 2.0 or corrupted | Try `strings` command |
+| Permission denied | Running as root | Use `-u remnux` flag |
+
+---
+
+### Step 5️⃣: Alternative Extraction with `peepdf`
+
+If `pdf-parser` fails:
+
 ```bash
+# Open interactive mode
 peepdf -i "file_name.pdf"
 ```
 
-*Once the interactive prompt loads (PP>), type this exact command to rip out the JavaScript and dump it straight into a text file:*
+Once the prompt loads (`PP>`), extract JavaScript:
+
 ```bash
 extract js > script.js
+exit
 ```
 
-*Then type exit to close the tool. You can now read the clean code by running:*
+Then read the extracted code:
 ```bash
 cat script.js
 ```
 
-If it is not returning anything then the file is empty and it didn't copy anything from anything in the json file
+---
 
-## for fo furhter checking then run this
-```bash
-pdf-parser.py -a "file_name.pdf"
-```
+### Step 6️⃣: Brute-Force String Extraction
 
-*At the very top or bottom of the -a output, it will show a clean count of structural properties:*
-`Catalog: 1
-Info: 1
-Pages: 79
-Actions: 0     <-- Look at this!`
-
-If Actions or OpenAction displays a count of 0, and peepdf generated a completely empty file, it confirms a definitive conclusion: There is no actual JavaScript code hidden inside this PDF file
-
-
-### 4. Brute-Force String Extraction (`strings` + `grep`)
-
-If the PDF structure is corrupted or too large for parsers, extract raw text patterns.
+For corrupted or extremely large PDFs:
 
 ```bash
-# Search for suspicious commands and obfuscated URLs
+# Search for common malicious commands
 strings "suspicious_file.pdf" | grep -iE "powershell|cmd.exe|http|eval\(|unescape\("
 
-# Look for obfuscation (e.g., weird capitalization like 'hTtP')
+# Extract with context (5 lines before/after)
 strings "suspicious_file.pdf" | grep -i "http" -B 5 -A 5
-
 ```
+
+**Suspicious patterns to search for:**
+- `powershell` → Shell command execution
+- `cmd.exe` → Windows command line
+- `http://` or `https://` → Network connections
+- `eval(` → Dynamic code execution
+- `base64` → Obfuscated payloads
 
 ---
 
-## To Pacify the PDF file
+### Step 7️⃣: Final Verification
 
-### Step 1: Ghostscript Sanitization
-- **Run this command:**
-- ```bash
-  gs -o "SSC_Kiran_English_FIXED.pdf" -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress "SSC_Kiran_English.pdf"
-  ```
-- This command is excellent for reducing file size and flattening the document structure.
+```bash
+# Get structural analysis
+pdf-parser.py -a "suspicious_file.pdf"
+```
 
-### Step 2: The "Nuclear" Option (Image-Based)
-- If you are still suspicious, the absolute safest method is to turn every page into an image and then rebuild the PDF. This destroys all active content
-- **Run this command:**
-- ```basg
-  gs -sDEVICE=pdfwrite -dFILTERIMAGE -o "SSC_Kiran_English_IMAGE.pdf" "SSC_Kiran_English_FIXED.pdf"
-  ```
+Look for this output:
+```
+Catalog: 1
+Info: 1
+Pages: 79
+Actions: 0     ← Should be 0
+OpenAction: 0  ← Should be 0
+```
 
-### To print each peges into png or jpg so extra secured pdf file
-- First create the folder for storing the images:
-- ```bash
-  mkdir ssc_2025_pages
-  ```
-- ### Use Ghostscript to "Print" to PNG
-- **Run this command. It tells Ghostscript to turn every page into a high-quality (300 DPI) image:**
-- ```bash
-  gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r300 -sOutputFile=ssc_2025_pages/page-%d.png "SSC_Kiran_English_FIXED.pdf"
-  ```
-- `-r300`: This sets the resolution to 300 DPI. This is the "sweet spot"—it makes the text very clear for reading, but doesn't make the file size impossible to handle.
-- `page-%d.png`: The `%d` tells the computer to number the pages automatically `(page-1.png, page-2.png, etc.)`.
-- ### To convert back to pdf:
-- **Method1**: Use the pdf editor software to compile all the images into pdf
-- But fist remove the metadate from the PNG images run this code:
-- ```bash
-  for f in ssc_2025_pages/*.png; do mogrify -strip "$f"; done
-  ```
-- This handles one image at a time.
-- It uses almost zero extra RAM.
-- It is 100% safe from crashing.
-- **Move to a "Clean" Folder:**
-- Copy the `.png` **files** from your Docker folder to a new, empty folder on your Windows desktop.
-- ### Now then you can proceede with convert images to pdf from pdf Editor
-- **Methode 2**: Use the img2pdf:
-- Downlaod the img2pdf first
-- ```bash
-  sudo apt-get update && sudo apt-get install img2pdf -y
-  ```
-- Then run the command to convert the images into pdf (it will take time according to the size of thie file and it will sort the pages according to the numbering form the image)
-- ```bash
-  img2pdf $(ls -v ssc_2025_pages/*.png) -o "SSC_Kiran_2025_SAFE.pdf"
-  ```
-- `ls -v` (version sort) inside the command to make sure Page 2 comes after Page 1, not after Page 100
-- `Security`: This tool is strictly for images. It doesn't even have the "brain" to understand JavaScript or shellcode, so it acts as a final filter that ensures your output is 100% clean.
-- 
-### Crucial Verification Step
-- Run `pdfid` on the new file:
-- ```bash
-  pdfid.py "Processed.pdf"
-  ```
-- The result should now show `0` for `/JS`, `/JavaScript`, and `/AA`. If it still shows numbers greater than zero, the sanitization failed, and you should delete the file immediately.
+**✅ Clean Result:** All action counts are 0  
+**❌ Infected Result:** Any non-zero values = malware present
+
+---
+
+## 🛡️ To Pacify the PDF File
+
+If you've identified malicious content, sanitize the PDF:
+
+### Option 1: Ghostscript Sanitization (Quick)
+
+```bash
+gs -o "output_SANITIZED.pdf" -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress "suspicious_file.pdf"
+```
+
+**What this does:**
+- Removes embedded scripts
+- Flattens document structure
+- Reduces file size
+- Preserves readability
+
+---
+
+### Option 2: Nuclear Option - Image-Based Conversion (Safest)
+
+This **destroys all active content** by converting pages to images:
+
+#### Step 1: Create working folder
+```bash
+mkdir safe_pdf_output
+```
+
+#### Step 2: Convert pages to images (300 DPI)
+```bash
+gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r300 -sOutputFile=safe_pdf_output/page-%d.png "suspicious_file.pdf"
+```
+
+**Why 300 DPI?** Sweet spot for clarity without excessive file size.
+
+#### Step 3: Strip metadata from images (Security!)
+```bash
+for f in safe_pdf_output/*.png; do mogrify -strip "$f"; done
+```
+
+#### Step 4: Convert images back to PDF
+
+**Method A - Using img2pdf (Recommended):**
+
+First install:
+```bash
+sudo apt-get update && sudo apt-get install img2pdf -y
+```
+
+Then convert (maintains page order):
+```bash
+img2pdf $(ls -v safe_pdf_output/*.png) -o "output_SAFE.pdf"
+```
+
+**Method B - Using GUI PDF editor:**
+1. Copy `.png` files to your Windows desktop
+2. Use any PDF editor (Preview, Adobe, online tools)
+3. Import images and export as PDF
+
+---
+
+### Final Verification
+
+Always verify sanitization worked:
+
+```bash
+pdfid.py "output_SAFE.pdf"
+```
+
+**Expected result:**
+```
+/JS: 0          ← Must be 0
+/JavaScript: 0  ← Must be 0
+/AA: 0          ← Must be 0
+/OpenAction: 0  ← Must be 0
+/ObjStm: 0      ← Must be 0
+```
+
+> ⚠️ **If ANY value is NOT zero, the sanitization failed. Delete the file immediately.**
+
+---
 
 ## 📉 Reclaiming System Resources
 
-Because Docker and WSL 2 "reserve" RAM, you must shut them down manually after your analysis is complete.
+After analysis, Docker and WSL 2 continue reserving RAM. Free it up:
 
-1. **Exit the container:** Type `exit`.
-2. **Shutdown WSL:** Open PowerShell and run:
-```powershell
-wsl --shutdown
-
+#### Step 1: Exit the Container
+```bash
+exit
 ```
 
+#### Step 2: Shutdown WSL 2
+```powershell
+wsl --shutdown
+```
 
-3. **Quit Docker Desktop** from the system tray.
+#### Step 3: Quit Docker Desktop
+- Right-click Docker icon in system tray
+- Select "Quit Docker Desktop"
 
----
-
-## ⚠️ Safety Warning
-
-* **NEVER** open the suspicious PDF on your host Windows/Mac machine.
-* **ONLY** interact with the file via the command-line tools inside the Docker container.
-* **DELETE** the file and empty your Recycle Bin immediately if malicious indicators are confirmed.
+Your RAM will be immediately released.
 
 ---
 
 ## 📚 Reference Tools
 
-* [Didier Stevens Suite](https://blog.didierstevens.com/programs/pdf-tools/)
-* [REMnux Documentation](https://docs.remnux.org/)
-* [MalwareAnalysis-in-PDF](https://github.com/filipi86/MalwareAnalysis-in-PDF)
+- **[Didier Stevens PDF Tools](https://blog.didierstevens.com/programs/pdf-tools/)** - In-depth tool documentation
+- **[REMnux Documentation](https://docs.remnux.org/)** - Complete REMnux guide
+- **[Malware Analysis in PDF](https://github.com/filipi86/MalwareAnalysis-in-PDF)** - Additional resources
+- **[pdf-parser.py GitHub](https://github.com/smalots/pdfparser)** - Python PDF parser
+- **[PDFID by Didier Stevens](https://github.com/DidierStevens/DidierStevensSuite)** - Main analysis tool
+
+---
+
+## ⚠️ Safety Warning
+
+### Critical Rules:
+
+🚫 **NEVER** open suspicious PDFs on your host machine (Windows/Mac)
+
+🚫 **NEVER** click links or run extracted JavaScript outside the Docker container
+
+🚫 **NEVER** move files between Docker and host without scanning
+
+✅ **ALWAYS** interact with files via command-line tools inside Docker
+
+✅ **ALWAYS** delete suspected malware immediately and empty Recycle Bin
+
+✅ **ALWAYS** run in an isolated environment (VM or Docker)
+
+### If Malware is Confirmed:
+
+1. Exit Docker container
+2. Delete the original file
+3. Empty Recycle Bin
+4. Run malware scanner on host (Windows Defender, Malwarebytes, etc.)
+5. Consider reformatting if deeply concerned
+
+---
+
+## 💡 Tips & Tricks
+
+### Speed Up Scans on Large PDFs
+
+```bash
+# For 300MB+ files, increase container memory
+docker run --rm -it -m 8g -u remnux -v "%cd%":/home/remnux/files remnux/remnux-distro:noble bash
+```
+
+### Keep Analysis Logs
+
+```bash
+# Redirect all output to a log file
+pdfid.py "file.pdf" | tee analysis_log.txt
+```
+
+### Batch Process Multiple PDFs
+
+```bash
+# Scan all PDFs in a folder
+for f in *.pdf; do echo "=== $f ===" ; pdfid.py "$f" ; done
+```
+
+---
+
+## 📝 License
+
+This project is provided as-is for educational and research purposes.
+
+---
+
+<div align="center">
+
+**Created for secure PDF malware analysis** | **Stay safe, analyze in isolation** 🔒
+
+</div>
