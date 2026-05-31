@@ -94,9 +94,16 @@ cd C:\Users\YourUsername\Documents\pdf_analysis
 ```
 
 #### 2. Start the Docker Container
+**Run without Internet connection:**
 ```bash
 docker run --rm -it --network none -m 4g -u remnux -v "%cd%":/home/remnux/files remnux/remnux-distro:noble bash
 ```
+
+**Run with Internet Connection**:
+```bash
+docker run --rm -it -m 4g -u remnux -v "%cd%":/home/remnux/files remnux/remnux-distro:noble bash
+```
+
 
 **Command Breakdown:**
 - `--rm` → Auto-clean container after exit
