@@ -523,4 +523,99 @@ This project is provided as-is for educational and research purposes.
 
 **Created for secure PDF malware analysis** | **Stay safe, analyze in isolation** 🔒
 
+
+### Sanitize.py for pdf
+```python
+import fitz  # PyMuPDF
+import sys
+
+# Configuration
+input_pdf = "SSC_Kiran_Maths_Feeded.pdf"
+output_pdf = "SSC_Kiran_Maths_SANITIZED.pdf"
+dpi = 150  # 150 is the Dangerzone standard. Change to 300 if you need extreme zoom resolution.
+
+# 1. Open the original dangerous document
+print(f"Opening original file: {input_pdf}")
+src_doc = fitz.open(input_pdf)
+total_pages = len(src_doc)
+
+# 2. Create a brand-new, completely empty PDF document for output
+clean_doc = fitz.open()
+
+print(f"Sanitizing {total_pages} pages into flat pixel layers...")
+
+# 3. Process every page sequentially
+for page_num in range(total_pages):
+    # Load the page from the original document
+    page = src_doc.load_page(page_num)
+    
+    # Force-render the page layout into a raw RGB pixel map (removes all active code/fonts)
+    pix = page.get_pixmap(matrix=fitz.Matrix(dpi / 72, dpi / 72), alpha=False)
+    
+    # Convert the raw pixel block data into a standardized, safe PNG byte stream in memory
+    img_bytes = pix.tobytes("png")
+    
+    # Create a temporary one-page PDF wrapper from those clean image bytes
+    img_doc = fitz.open("pdf", fitz.convert_to_pdf(img_bytes))
+    
+    # Insert that 100% clean, flattened page into our final clean document
+    clean_doc.insert_pdf(img_doc)
+    
+    # Close temporary page stream to save RAM
+    img_doc.close()
+    
+    # Print real-time progress update on the terminal line
+    print(f"Processed Page {page_num + 1} of {total_pages}", end="\r")
+
+print("\nWriting out the secure, flat PDF file...")
+
+# 4. Save the finalized sanitized document cleanly
+clean_doc.save(output_pdf, garbage=4, deflate=True)
+
+# Close documents to release system hooks
+src_doc.close()
+clean_doc.close()
+
+print(f"Success! Your air-gapped, secure document is ready at: {output_pdf}")
+```
+
+### sanitize.py for creating the png (images)
+```python
+import fitz  # PyMuPDF
+import os
+
+# Configuration
+input_pdf = "SSC_Kiran_Maths_Feeded.pdf"
+output_dir = "pacified_pdf"
+dpi = 150  # Dangerzone standard for readable text (increase to 300 if needed)
+
+# Ensure output directory exists
+os.makedirs(output_dir, exist_ok=True)
+
+# Open the document
+doc = fitz.open(input_pdf)
+total_pages = len(doc)
+
+print(f"Total pages to process: {total_pages}")
+
+# Loop through pages numerically (1, 2, 3...)
+for page_num in range(total_pages):
+    page = doc.load_page(page_num)
+    
+    # Render page to an RGB pixel map (matrix handles the DPI/resolution)
+    pix = page.get_pixmap(matrix=fitz.Matrix(dpi / 72, dpi / 72), alpha=False)
+    
+    # Save directly as a clean PNG image (numbered 1, 2, 3...)
+    actual_page_number = page_num + 1
+    output_path = os.path.join(output_dir, f"page-{actual_page_number}.png")
+    
+    pix.save(output_path)
+    
+    # Print real-time progress on a single line
+    print(f"Processed Page {actual_page_number} of {total_pages}", end="\r")
+
+print("\nSanitization complete! All pages converted to raw pixel images.")
+```
+
+
 </div>
