@@ -95,7 +95,7 @@ cd C:\Users\YourUsername\Documents\pdf_analysis
 
 #### 2. Start the Docker Container
 ```bash
-docker run --rm -it -m 4g -u remnux -v "%cd%":/home/remnux/files remnux/remnux-distro:noble bash
+docker run --rm -it --network none -m 4g -u remnux -v "%cd%":/home/remnux/files remnux/remnux-distro:noble bash
 ```
 
 **Command Breakdown:**
